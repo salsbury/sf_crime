@@ -13,11 +13,27 @@ dayofweek <- 1:7
 names(dayofweek) <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 train_crime$DayOfWeekNum <- dayofweek[train_crime$DayOfWeek]
 
+
+#
+# function for top n categories (based on counts)
+#
+
+top_n_crime <- function(df, num, cat){
+  table(df[, cat]) %>% sort(decreasing = TRUE) %>%
+        head(n = num) %>% names
+  
+}
+
+#
+# SF Crime EDA
+#
+
+
 #
 # looking at counts of top 15 crime categories
 #
 
-cat_names_15 <- table(train_crime$Category) %>% sort(decreasing = T) %>% head(n = 15) %>% names
+cat_names_15 <- top_n_crime(15, "Category")
 
 train_crime %>%
         filter(Category %in% cat_names_15) %>%
@@ -32,7 +48,7 @@ train_crime %>%
 # looking at percentages of top 10 categories Over the years
 #
 
-cat_names_10 <- table(train_crime$Category) %>% sort(decreasing = T) %>% head(n = 10) %>% names
+cat_names_10 <- top_n_crime(10, "Category")
 
 train_crime %>%
         mutate(Year_crime = as.factor(year(Dates))) %>%
@@ -67,7 +83,7 @@ train_crime %>%
 #
 # looking at histogram of district and top 10 crime categories
 #
-cat_names_10 <- table(train_crime$Category) %>% sort(decreasing = T) %>% head(n = 10) %>% names
+cat_names_10 <- top_n_crime(10, "Category")
 
 train_crime %>%
   filter(Category %in% cat_names_10) %>%
@@ -81,5 +97,69 @@ train_crime %>%
        title = "Histogram of Crimes in San Francisco\nSeparated by District and Category (From 01/06/03 - 05/13/15)") +
   theme(axis.text.x = element_text(angle = 70, vjust = 1, hjust = 1))
 
+#
+# looking at addresses with the most crime
+#
 
-add_count <- table(train_crime$Address) %>% sort(decreasing = T)
+cat_names_20 <- top_n_crime(20, "Category")
+
+add_names_15 <- top_n_crime(15, "Address")
+crime_filt <- train_crime %>%
+                filter(Y < 40, 
+                       Address %in% add_names_15,
+                       Category %in% cat_names_20)
+
+crime_filt %>%
+  mutate(Add_fact = factor(Address, levels = rev(add_names_15))) %>%
+  group_by(Add_fact, Category) %>%
+  summarize(Total = n()) %>%
+  ggplot(aes(Add_fact, Total, fill = Category)) +
+  guides(fill = guide_legend(ncol = 2)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(x = "Street Block of Place Crime was Reported",
+       y = "Number of Crimes Reported",
+       title = "Addresses in San Francisco with the Most Crime Reported\n(Top 20 Crime Categories From 01/06/03 - 05/13/15)")
+
+#
+# looking at more Addresses (Removing 800 Bryant Street Where the Main Police Station is)
+#
+
+cat_names_20 <- top_n_crime(20, "Category")
+
+add_names_20 <- top_n_crime(21, "Address")[-1]
+crime_filt <- train_crime %>%
+  filter(Y < 40, 
+         Address %in% add_names_20,
+         Category %in% cat_names_20)
+
+crime_filt %>%
+  mutate(Add_fact = factor(Address, levels = rev(add_names_20))) %>%
+    group_by(Add_fact, Category) %>%
+      summarize(Total = n()) %>%
+  ggplot(aes(Add_fact, Total, fill = Category)) +
+  guides(fill = guide_legend(ncol = 2)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(x = "Street Block of Place Crime was Reported",
+      y = "Number of Crimes Reported",
+       title = "Addresses in San Francisco with the Most Crime Reported\n(Top 20 Crime Categories From 01/06/03 - 05/13/15)\nRemoving 800 Bryant Police Station")
+
+
+#
+crime_filt <- train_crime %>%
+    filter(Category == "ASSAULT")
+desc_names_10 <- top_n_crime(crime_filt, 10, "Descript")
+
+crime_filt %>%
+      filter(Descript %in% desc_names_10) %>%
+        ggplot(aes(Descript, colour = Descript)) +
+          geom_bar(stat = "bin") +
+            coord_flip() +
+              facet_grid(. ~ PdDistrict) +
+                guides(colour = FALSE) +
+        labs(x = "Description",
+            y = "Number of Crimes Reported",
+            title = "Histogram of Assault Category in San Francisco\nSeparated by Crime and District (From 01/06/03 - 05/13/15)") +
+              theme(axis.text.x = element_text(angle = 70, vjust = 1, hjust = 1))
+
