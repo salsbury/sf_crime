@@ -33,7 +33,7 @@ top_n_crime <- function(df, num, cat){
 # looking at counts of top 15 crime categories
 #
 
-cat_names_15 <- top_n_crime(15, "Category")
+cat_names_15 <- top_n_crime(train_crime, 15, "Category")
 
 train_crime %>%
         filter(Category %in% cat_names_15) %>%
@@ -48,7 +48,7 @@ train_crime %>%
 # looking at percentages of top 10 categories Over the years
 #
 
-cat_names_10 <- top_n_crime(10, "Category")
+cat_names_10 <- top_n_crime(train_crime, 10, "Category")
 
 train_crime %>%
         mutate(Year_crime = as.factor(year(Dates))) %>%
@@ -83,7 +83,7 @@ train_crime %>%
 #
 # looking at histogram of district and top 10 crime categories
 #
-cat_names_10 <- top_n_crime(10, "Category")
+cat_names_10 <- top_n_crime(train_crime, 10, "Category")
 
 train_crime %>%
   filter(Category %in% cat_names_10) %>%
@@ -101,9 +101,9 @@ train_crime %>%
 # looking at addresses with the most crime
 #
 
-cat_names_20 <- top_n_crime(20, "Category")
+cat_names_20 <- top_n_crime(train_crime, 20, "Category")
 
-add_names_15 <- top_n_crime(15, "Address")
+add_names_15 <- top_n_crime(train_crime, 15, "Address")
 crime_filt <- train_crime %>%
                 filter(Y < 40, 
                        Address %in% add_names_15,
@@ -125,9 +125,9 @@ crime_filt %>%
 # looking at more Addresses (Removing 800 Bryant Street Where the Main Police Station is)
 #
 
-cat_names_20 <- top_n_crime(20, "Category")
+cat_names_20 <- top_n_crime(train_crime, 20, "Category")
 
-add_names_20 <- top_n_crime(21, "Address")[-1]
+add_names_20 <- top_n_crime(train_crime, 21, "Address")[-1]
 crime_filt <- train_crime %>%
   filter(Y < 40, 
          Address %in% add_names_20,
@@ -147,6 +147,9 @@ crime_filt %>%
 
 
 #
+# Looking at crimes in assault separated by district
+#
+
 crime_filt <- train_crime %>%
     filter(Category == "ASSAULT")
 desc_names_10 <- top_n_crime(crime_filt, 10, "Descript")
@@ -163,3 +166,70 @@ crime_filt %>%
             title = "Histogram of Assault Category in San Francisco\nSeparated by Crime and District (From 01/06/03 - 05/13/15)") +
               theme(axis.text.x = element_text(angle = 70, vjust = 1, hjust = 1))
 
+
+#
+# looking at Resolutions for theft
+#
+
+crime_filt <- train_crime %>%
+                filter(Category == "LARCENY/THEFT")
+
+res_names_10 <- top_n_crime(crime_filt, 10, "Resolution")
+
+
+crime_filt %>%
+          filter(Resolution %in% res_names_10) %>%
+            ggplot(aes(Resolution)) +
+              geom_bar(stat = "bin") +
+                coord_flip() +
+                  labs(y = "Number of Resolutions",
+                       title = "Top 10 Resolutions for LARCENY/THEFT Category")
+
+#
+# looking at Percentage of Resolutions for Descriptions in Assaults
+#
+
+crime_filt <- train_crime %>%
+  filter(Category == "ASSAULT")
+
+des_names_10 <- top_n_crime(crime_filt, 10, "Descript")
+res_names_10 <- top_n_crime(crime_filt, 10, "Resolution")
+
+
+crime_filt %>%
+  filter(Descript %in% des_names_10) %>%
+    group_by(Descript, Resolution) %>%
+      tally() %>%
+        group_by(Descript) %>%
+          mutate(Percentage = (n/sum(n))*100) %>%
+            filter(Resolution %in% res_names_10) %>%
+  ggplot(aes(Descript, Percentage, fill = Resolution)) +
+      geom_bar(stat = "identity") +
+        coord_flip() +
+        labs(y = "Percentage of Resolutions for Crime Descriptions",
+          title = "Percentage of Resolutions for\nTop Crime Descriptions for ASSAULT Category")
+
+
+#
+# Looking at resolutions for all crimes
+#
+cat_names_20 <- top_n_crime(train_crime, 20, "Category")
+
+res_names_15 <- top_n_crime(train_crime, 15, "Resolution")
+
+crime_filt <- train_crime %>%
+  filter(
+         Resolution %in% res_names_15,
+         Category %in% cat_names_20)
+
+crime_filt %>%
+  mutate(Res_fact = factor(Resolution, levels = rev(res_names_15))) %>%
+  group_by(Res_fact, Category) %>%
+  summarize(Total = n()) %>%
+  ggplot(aes(Res_fact, Total, fill = Category)) +
+  guides(fill = guide_legend(ncol = 2)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(x = "Resolution",
+       y = "Number of Resolutions",
+       title = "Resolutions of Crime in San Francisco\n(Top 20 Crime Categories From 01/06/03 - 05/13/15)")
