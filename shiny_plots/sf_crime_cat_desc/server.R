@@ -6,7 +6,7 @@ library(lubridate)
 load("../../data/train_crime.RData")
 
 shinyServer(function(input, output){
-  output$plot <- renderPlot({
+  plotInput <- reactive({
     crime_filt <- train_crime %>%
                     filter(Category == input$cat)
     top_desc <- table(crime_filt$Descript) %>% 
@@ -43,8 +43,13 @@ shinyServer(function(input, output){
                     title = paste("Counts of Crimes for",
                            input$cat, "Category\nIn San Francisco From (01/06/03 - 05/13/15)"))
               }
-    print(ggp)
-    
+  })
+  output$plot <- renderPlot(function() {
+    if(input$savePlot) {
+      isolate({name <- paste0("../../plots/", input$filename, ".png")})
+      ggsave(name, plotInput(), type="cairo-png", height = 6, units = "in")
+    }
+    else print(plotInput())
   })
   
 })

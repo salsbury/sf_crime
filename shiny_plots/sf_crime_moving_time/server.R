@@ -84,17 +84,16 @@ shinyServer(function(input, output){
                     })
   
   output$plot <- renderPlot({
-    ggp <- 
       ggplot() +
         geom_polygon(data = sfn, 
                 aes(x = long, y = lat, group = group),
                    fill="#3D3D4C") +
+      geom_path(data = sfn, 
+                aes(x = long, y = lat, group = group),
+                colour = "black") +
         geom_point(data = crime_dataf(), 
                 aes(X,Y, colour = Category), 
                     alpha = 0.1) +
-        geom_path(data = sfn, 
-                aes(x = long, y = lat, group = group),
-                   colour = "black") +
         ggtitle(paste("Crimes in San Francisco for", 
                 input$time, input$num_time)) +
         guides(colour = guide_legend(override.aes = 
@@ -106,9 +105,16 @@ shinyServer(function(input, output){
                 axis.ticks = element_blank(),
                 axis.title.x = element_blank(),
                 axis.title.y = element_blank())
-
-    print(ggp)
     
           })
+  
+  output$info <- renderPrint({
+      new_df <- nearPoints(crime_dataf(), input$plotclick, xvar = "X", yvar = "Y")
+      new_df %>% 
+        group_by(Address, Category) %>%
+        tally()
+      })
+  
+  
   
         })

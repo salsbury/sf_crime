@@ -233,3 +233,23 @@ crime_filt %>%
   labs(x = "Resolution",
        y = "Number of Resolutions",
        title = "Resolutions of Crime in San Francisco\n(Top 20 Crime Categories From 01/06/03 - 05/13/15)")
+
+#
+# looking at the count of crimes for each hour in the days for the year 2014
+#
+
+crime_2014 <- train_crime %>%
+  filter(year(Dates) == 2014)
+
+minute(crime_2014$Dates) <- 0
+
+crime_2014 %>%
+  group_by(Dates) %>%
+  tally() %>%
+  mutate(date_only = as.Date(Dates),
+         hour_only = hour(Dates)) %>%
+  ggplot(aes(hour_only, n, group = date_only, colour = date_only)) +
+  geom_line() +
+  labs(x = "Hour of Day",
+       y = "Counts of Crimes Reported",
+       title = "Count of San Francisco Crimes for Each Hour of the Days in 2014")

@@ -26,6 +26,7 @@ shinyUI(fluidPage(
                          selected = "ROBBERY")
       
       ),
-    mainPanel(plotOutput("plot"))
+    mainPanel(plotOutput("plot", click = "plotclick"),
+              verbatimTextOutput("info")),
     )
   ))

@@ -19,7 +19,8 @@ shinyUI(fluidPage(
                               "ARSON", "LOITERING",
                               "SEX OFFENSES, FORCIBLE"),
                   selected = "ROBBERY")),
-    mainPanel(plotOutput("plot"))
+    mainPanel(plotOutput("plot", click = "plotclick"),
+              verbatimTextOutput("info"))
   
                  )
                 )

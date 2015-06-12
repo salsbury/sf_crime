@@ -3,7 +3,7 @@ library(ggplot2)
 library(dplyr)
 
 shinyServer(function(input, output){
-  output$plot <- renderPlot({
+  plotInput <- reactive({
     crime_filt <- train_crime %>%
       filter(Category == input$cat)
     
@@ -22,10 +22,18 @@ shinyServer(function(input, output){
             geom_bar(stat = "identity") +
               coord_flip() +
                 guides(fill = guide_legend("Resolution"))+
-            labs(y = "Percentage of Resolutions for Crime Descriptions",
+            labs(x = "Crime Description",
+              y = "Percentage of Resolutions for Crime Descriptions",
               title = paste("Percentage of Resolutions for\nTop Crime Descriptions for", input$cat, "Category"))
-    
-    print(ggp)
+  })
+
+
+  output$plot <- reactivePlot(function() {
+    if(input$savePlot) {
+      isolate({name <- paste0("../../plots/", input$filename, ".png")})
+      ggsave(name, plotInput(), type="cairo-png")
+    }
+    else print(plotInput())
   })
   
 })
